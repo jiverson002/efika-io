@@ -30,7 +30,8 @@ getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 /*! Function to read a cluto file. */
 /*----------------------------------------------------------------------------*/
 extern int
-IO_cluto_load(FILE * const istream, Matrix * const m) {
+IO_cluto_load(FILE * const istream, Matrix * const M)
+{
   /*==========================================================================*/
   GC_func_init();
   /*==========================================================================*/
@@ -38,6 +39,10 @@ IO_cluto_load(FILE * const istream, Matrix * const m) {
   size_t n = 0;
   ind_t nr, nc, nnz;
   char *line = NULL;
+
+  /* validate input */
+  if (!pp_all(istream, M))
+    return -1;
 
   /* register line with the garbage collector */
   GC_register(&line);
@@ -95,17 +100,17 @@ IO_cluto_load(FILE * const istream, Matrix * const m) {
   GC_assert(j == nnz);
 
   /* record relevant info in /M/ */
-  /*m->fmt  = 0;*/
-  /*m->diag = 0;*/
-  m->sort   = NONE;
-  /*m->symm = 0;*/
-  m->nr     = nr;
-  m->nc     = nc;
-  m->nnz    = nnz;
-  /*m->ncon = 0;*/
-  m->ia     = ia;
-  m->ja     = ja;
-  m->a      = a;
+  /*M->fmt  = 0;*/
+  /*M->diag = 0;*/
+  M->sort   = NONE;
+  /*M->symm = 0;*/
+  M->nr     = nr;
+  M->nc     = nc;
+  M->nnz    = nnz;
+  /*M->ncon = 0;*/
+  M->ia     = ia;
+  M->ja     = ja;
+  M->a      = a;
 
   GC_free(line);
 
@@ -116,7 +121,8 @@ IO_cluto_load(FILE * const istream, Matrix * const m) {
 /*! Function to write a cluto file. */
 /*----------------------------------------------------------------------------*/
 extern int
-IO_cluto_save(FILE * const ostream, Matrix const * const M) {
+IO_cluto_save(FILE * const ostream, Matrix const * const M)
+{
   /* validate input */
   if (!pp_all(ostream, M))
     return -1;

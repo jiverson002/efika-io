@@ -2,53 +2,69 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "../common.h"
-#include "../insist.h"
+#include "efika/core/gc.h"
+#include "efika/core/pp.h"
+#include "efika/io/rename.h"
+#include "efika/io.h"
+
+/*----------------------------------------------------------------------------*/
+/*! Get next non-comment line from a file. */
+/*----------------------------------------------------------------------------*/
+static inline ssize_t
+getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
+{
+  ssize_t ret;
+
+  /* skip comment lines */
+  do {
+    ret = getline(lineptr, n, istream);
+  } while (0 < ret && '%' == *lineptr[0]);
+
+  return ret;
+}
 
 /*----------------------------------------------------------------------------*/
 /*! Function to read a metis file. */
 /*----------------------------------------------------------------------------*/
 extern int
-IO_metis_load(FILE * const istream, Matrix * const m)
+IO_metis_load(FILE * const istream, Matrix * const M)
 {
-  int ret=-1, fmt=0;
-  size_t n=0;
+  /*==========================================================================*/
+  GC_func_init();
+  /*==========================================================================*/
+
+  int fmt = 0;
+  size_t n = 0;
   ind_t i, j;
-  ind_t nr, nnz, nnnz, ncon=0;
-  char * tok, * line=NULL;
-  ind_t * ia=NULL, * ja=NULL, * vsiz=NULL;
-  val_t * a=NULL, * vwgt=NULL;
+  ind_t nr, nnz, nnnz, ncon = 0;
+  char * tok, * line = NULL;
 
-  insist(NULL != istream);
-  insist(NULL != m);
+  /* validate input */
+  if (!pp_all(istream, M))
+    return -1;
 
-  do {
-    insist(0 < getline(&line, &n, istream));
-  } while ('%' == line[0]);
+  /* register line with the garbage collector */
+  GC_register(&line);
 
-  switch (sscanf(line, IND_T" "IND_T" %d "IND_T"\n", &nr, &nnz, &fmt, &ncon))
-  {
+  /* get first non-comment line in file */
+  GC_assert(0 < getline_nc(&line, &n, istream));
+
+  switch (sscanf(line, IND_T" "IND_T" %d "IND_T"\n", &nr, &nnz, &fmt, &ncon)) {
     case 4:
     /* validate */
-    if (0 == ncon) {
-      //gkl_pwarn("ncon cannot equal 0\n");
-      goto CLEANUP;
-    }
-    if ( 10 != fmt &&  11 != fmt && 110 != fmt && 111 != fmt) {
-      //gkl_pwarn("invalid format value (%d) with non-zero ncon\n", fmt);
-      goto CLEANUP;
-    }
-    ;
+    if (0 == ncon)
+      GC_return -1;
+    if ( 10 != fmt &&  11 != fmt && 110 != fmt && 111 != fmt)
+      GC_return -1;
     /* fall through */
 
     case 3:
     /* validate */
     if (  0 != fmt &&   1 != fmt &&  10 != fmt &&  11 != fmt && 100 != fmt &&
-        101 != fmt && 110 != fmt && 111 != fmt) {
-      //gkl_pwarn("invalid format value (%d)\n", fmt);
-      goto CLEANUP;
-    }
+        101 != fmt && 110 != fmt && 111 != fmt)
+      GC_return -1;
     /* fall through */
 
     case 2:
@@ -56,139 +72,117 @@ IO_metis_load(FILE * const istream, Matrix * const m)
     break;
 
     default:
-    //gkl_pwarn("too many entries on header line\n");
-    goto CLEANUP;
+    GC_return -1;
   }
 
-  insist(NULL != (ia=(ind_t *) malloc((nr+1)*sizeof(ind_t))));
-  insist(NULL != (ja=(ind_t *) malloc(nnz*sizeof(ind_t))));
+  ind_t * const ia = GC_malloc((nr + 1) * sizeof(*ia));
+  ind_t * const ja = GC_malloc(nnz * sizeof(*ja));
+  val_t *a = NULL;
+  val_t *vwgt = NULL;
+  ind_t *vsiz = NULL;
   if (has_adjwgt(fmt))
-    insist(NULL != (a=(val_t *) malloc(nnz*sizeof(val_t))));
+    a = GC_malloc(nnz * sizeof(*a));
   if (has_vtxwgt(fmt))
-    insist(NULL != (vwgt=(val_t *) malloc(ncon*nr*sizeof(val_t))));
+    vwgt = GC_malloc(ncon * nr * sizeof(*vwgt));
   if (has_vtxsiz(fmt))
-    insist(NULL != (vsiz=(ind_t *) malloc(nr*sizeof(ind_t))));
-
-  //gkl_print("   nr="IND_T", nc="IND_T", nnz="IND_T"\n", nr, nr, nnz);
-  //gkl_print("   fmt=%d, symm=%d, sort=%d\n\n", fmt, 1, 0);
+    vsiz = GC_malloc(nr * sizeof(*vsiz));
 
   ia[0] = 0;
-  for (nnnz=0,i=0; i<nr; ++i) {
-    insist(0 < getline(&line, &n, istream));
-
-    if ('%' == line[0]) {
-      i--;
-      continue;
-    }
+  for (nnnz = 0, i = 0; i < nr; i++) {
+    GC_assert(0 < getline_nc(&line, &n, istream));
 
     tok = strtok(line, " \t\n");
     if (has_vtxsiz(fmt)) {
-      insist(NULL != tok);
+      GC_assert(NULL != tok);
 
       vsiz[i] = strtoi(tok, NULL);
       tok = strtok(NULL, " \t\n");
     }
 
     if (has_vtxwgt(fmt)) {
-      for (j=0; j<ncon; ++j) {
-        insist(NULL != tok);
+      for (j = 0; j < ncon; j++) {
+        GC_assert(NULL != tok);
 
-        vwgt[i*ncon+j] = strtov(tok, NULL);
+        vwgt[i * ncon + j] = strtov(tok, NULL);
         tok = strtok(NULL, " \t\n");
       }
     }
 
     while (NULL != tok) {
-      ja[nnnz] = strtoi(tok, NULL)-1;
+      ja[nnnz] = strtoi(tok, NULL) - 1;
       tok = strtok(NULL, " \t\n");
 
       if (has_adjwgt(fmt)) {
-        insist(NULL != tok);
+        GC_assert(NULL != tok);
 
         a[nnnz] = strtov(tok, NULL);
         tok = strtok(NULL, " \t\n");
       }
 
-      if (++nnnz == nnz && NULL != tok) {
-        //gkl_pwarn("too many edges specified in file\n");
-        goto CLEANUP;
-      }
+      if (++nnnz == nnz && NULL != tok)
+        GC_return -1;
     }
     ia[i+1] = nnnz;
   }
-  insist(nnnz == nnz);
+  GC_assert(nnnz == nnz);
 
   while (!feof(istream) && 0 < getline(&line, &n, istream))
-    insist('%' == line[0]);
+    GC_assert('%' == line[0]);
 
-  m->fmt   = fmt;
-  /*m->diag  = 0;*/
-  /*m->sort  = NONE;*/
-  m->symm  = 1;
-  m->nr    = nr;
-  m->nc    = nr;
-  m->nnz   = nnz;
-  m->ia    = ia;
-  m->ja    = ja;
-  m->a     = a;
-  m->ncon  = ncon;
-  m->vsiz  = vsiz;
-  m->vwgt  = vwgt;
+  M->fmt   = fmt;
+  /*M->diag  = 0;*/
+  /*M->sort  = NONE;*/
+  M->symm  = 1;
+  M->nr    = nr;
+  M->nc    = nr;
+  M->nnz   = nnz;
+  M->ia    = ia;
+  M->ja    = ja;
+  M->a     = a;
+  M->ncon  = ncon;
+  M->vsiz  = vsiz;
+  M->vwgt  = vwgt;
 
-  ret = 0;
+  GC_free(line);
 
-CLEANUP:
-  if (-1 == ret) {
-    free(ia);
-    free(ja);
-    free(a);
-    free(vsiz);
-    free(vwgt);
-  }
-  free(line);
-
-  return ret;
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
 /*! Function to write a metis file. */
 /*----------------------------------------------------------------------------*/
 extern int
-IO_metis_save(FILE * const ostream, Matrix const * const m)
+IO_metis_save(FILE * const ostream, Matrix const * const M)
 {
-  int fmt, ret=-1;
-  ind_t i, j;
-  ind_t nr, nnz, ncon;
-  ind_t const * ia, * ja, * vsiz;
-  val_t const * a, * vwgt;
+  /* validate input */
+  if (!pp_all(ostream, M))
+    return -1;
 
-  insist(NULL != ostream);
-  insist(NULL != m);
-
-  fmt  = m->fmt;
-  nr   = m->nr;
-  nnz  = m->nnz;
-  ncon = m->ncon;
-  ia   = m->ia;
-  ja   = m->ja;
-  a    = m->a;
-  vwgt = m->vwgt;
-  vsiz = m->vsiz;
+  /* unpack /M/ */
+  int   const fmt = M->fmt;
+  ind_t const nr   = M->nr;
+  ind_t const nnz  = M->nnz;
+  ind_t const ncon = M->ncon;
+  ind_t const * const ia   = M->ia;
+  ind_t const * const ja   = M->ja;
+  val_t const * const a    = M->a;
+  val_t const * const vwgt = M->vwgt;
+  ind_t const * const vsiz = M->vsiz;
 
   fprintf(ostream, IND_T" "IND_T, nr, nnz/2);
   if (fmt > 0)
     fprintf(ostream, " %03d "IND_T, fmt, ncon);
   fprintf(ostream, "\n");
 
-  for (i=0; i<nr; ++i) {
+  for (ind_t i = 0; i < nr; i++) {
     if (has_vtxsiz(fmt))
       fprintf(ostream, IND_T" ", vsiz[i]);
 
     if (has_vtxwgt(fmt))
-      for (j=0; j<ncon; ++j)
-        fprintf(ostream, VAL_T" ", vwgt[i*ncon+j]);
+      for (ind_t j = 0; j < ncon; j++)
+        fprintf(ostream, VAL_T" ", vwgt[i * ncon + j]);
 
-    for (j=ia[i]; j<ia[i+1]; ++j) {
+    for (ind_t j = ia[i]; j < ia[i + 1]; j++) {
       fprintf(ostream, IND_T" ", ja[j]+1);
       if (has_adjwgt(fmt))
         fprintf(ostream, VAL_T" ", a[j]);
@@ -196,8 +190,5 @@ IO_metis_save(FILE * const ostream, Matrix const * const m)
     fprintf(ostream, "\n");
   }
 
-  ret = 0;
-
-  CLEANUP:
-  return ret;
+  return 0;
 }

@@ -2,9 +2,12 @@
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "../common.h"
-#include "../insist.h"
+#include "efika/core/gc.h"
+#include "efika/core/pp.h"
+#include "efika/io/rename.h"
+#include "efika/io.h"
 
 #define INIT_TMPSIZE 1024
 
@@ -14,49 +17,57 @@
 extern int
 IO_snap_load(FILE * const istream, Matrix * const M)
 {
-  int ret=-1;
-  size_t n=0;
-  ind_t i, otmpsz, tmpsz=INIT_TMPSIZE;
-  ind_t u, v, nr=0, nnz=0;
-  val_t w;
-  char * line=NULL;
-  ind_t * ia=NULL, * ja=NULL, * tmp=NULL;
-  val_t * a=NULL;
+  /*==========================================================================*/
+  GC_func_init();
+  /*==========================================================================*/
 
-  insist(NULL != istream);
-  insist(NULL != M);
+  size_t n = 0;
+  ind_t tmpsz = INIT_TMPSIZE;
+  ind_t nr = 0, nnz = 0;
+  char *line = NULL;
 
-  insist(NULL != (tmp=(ind_t *) calloc((tmpsz+1), sizeof(ind_t))));
+  /* validate input */
+  if (!pp_all(istream, M))
+    return -1;
+
+  /* register line with the garbage collector */
+  GC_register(&line);
+
+  ind_t *tmp = GC_calloc((tmpsz + 1), sizeof(*tmp));
 
   while (0 < getline(&line, &n, istream)) {
     if ('#' == line[0])
       continue;
 
-    insist(2 <= sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w));
-    insist(0 != u || 0 != v);
+    ind_t u, v;
+    val_t w;
+
+    GC_assert(2 <= sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w));
+    GC_assert(0 != u || 0 != v);
 
     if (u > nr)
       nr = u;
     if (v > nr)
       nr = v;
 
-    otmpsz = tmpsz;
+    ind_t const otmpsz = tmpsz;
     while (nr > tmpsz)
       tmpsz *= 2;
     if (tmpsz > otmpsz) {
-      insist(NULL != (tmp=(ind_t *)realloc(tmp, (tmpsz+1)*sizeof(ind_t))));
-      memset(tmp+otmpsz, 0, (tmpsz+1-otmpsz)*sizeof(ind_t));
+      tmp = GC_realloc(tmp, (tmpsz + 1) * sizeof(*tmp));
+      memset(tmp+otmpsz, 0, (tmpsz + 1 - otmpsz) * sizeof(*tmp));
     }
 
     tmp[u]++;
     nnz++;
   }
 
-  insist(NULL != (ia=(ind_t *) malloc((nr+1)*sizeof(ind_t))));
-  insist(NULL != (ja=(ind_t *) malloc(nnz*sizeof(ind_t))));
+  ind_t * const ia = GC_malloc((nr + 1) * sizeof(ind_t));
+  ind_t * const ja = GC_malloc(nnz * sizeof(ind_t));
+  val_t *a = NULL;
 
   ia[0] = 0;
-  for (i=1; i<=nr; ++i) {
+  for (ind_t i = 1; i <= nr; i++) {
     tmp[i] += tmp[i-1];
     ia[i] = tmp[i];
   }
@@ -67,24 +78,27 @@ IO_snap_load(FILE * const istream, Matrix * const M)
     if ('#' == line[0])
       continue;
 
+    ind_t u, v;
+    val_t w;
+
     switch (sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w)) {
       case 3:
       if (NULL == a)
-        insist(NULL != (a=(val_t *) malloc(nnz*sizeof(val_t))));
+        a = GC_malloc(nnz * sizeof(*a));
       a[tmp[u-1]] = w;
       /* fall through */
 
       case 2:
-      ja[tmp[u-1]++] = v-1;
+      ja[tmp[u - 1]++] = v - 1;
       break;
-      
+
       default:
-      goto CLEANUP;
+      GC_return -1;
     }
   }
 
   while (!feof(istream) && 0 < getline(&line, &n, istream))
-    insist('#' == line[0]);
+    GC_assert('#' == line[0]);
 
   /*M->fmt   = 0;*/
   /*M->diag  = 0;*/
@@ -98,18 +112,9 @@ IO_snap_load(FILE * const istream, Matrix * const M)
   M->ja    = ja;
   M->a     = a;
 
-  ret = 0;
+  GC_free(line);
 
-  CLEANUP:
-  if (-1 == ret) {
-    free(ia);
-    free(ja);
-    free(a);
-  }
-  free(tmp);
-  free(line);
-
-  return ret;
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -128,12 +133,11 @@ IO_snap_save(FILE * const ostream, Matrix const * const M)
   ind_t const * const ja = M->ja;
   val_t const * const a  = M->a;
 
-  foreach (ind_t i in range(nr)) {
-    foreach (ind_t j in range(ia[i], ia[i+1])) {
-      fprintf(ostream, IND_T" "IND_T, i+1, ja[j]+1);
-      if (NULL != a) {
+  for (ind_t i = 0; i < nr; i++) {
+    for (ind_t j = ia[i]; j < ia[i + 1]; j++) {
+      fprintf(ostream, IND_T" "IND_T, i + 1, ja[j] + 1);
+      if (NULL != a)
         fprintf(ostream, " "VAL_T, a[j]);
-      }
       fprintf(ostream, "\n");
     }
   }
