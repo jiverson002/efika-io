@@ -2,13 +2,14 @@
 #include <stdio.h>
 
 #include "efika/core/pp.h"
+#include "efika/io/export.h"
 #include "efika/io/rename.h"
 #include "efika/io.h"
 
 /*----------------------------------------------------------------------------*/
 /*! Function to write a dimacs file. */
 /*----------------------------------------------------------------------------*/
-extern int
+EFIKA_IO_EXPORT int
 IO_dimacs_save(FILE * const ostream, Matrix const * const M)
 {
   /* validate input */

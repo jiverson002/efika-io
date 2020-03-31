@@ -1,57 +1,63 @@
-cmake_minimum_required( VERSION 3.10 )
+# SPDX-License-Identifier: MIT
+cmake_minimum_required(VERSION 3.14)
 
 # Subproject of efika
-project( efika-io )
+project(efika-io)
 
-# Always use '-fPIC'/'-fPIE' option.
-set( CMAKE_POSITION_INDEPENDENT_CODE ON )
+# Include build configurations (compiler standards, options, etc.)
+if (EFIKA_BUILDCONFIG_FILE)
+  include(${EFIKA_BUILDCONFIG_FILE})
+endif()
 
-# Require C99 compliance from compiler
-set( CMAKE_C_STANDARD 99 )
-set( CMAKE_C_STANDARD_REQUIRED ON )
-set( CMAKE_C_EXTENSIONS OFF )
+# Include required CMake modules
+include(GenerateExportHeader)
 
 #-------------------------------------------------------------------------------
 # COMPONENT configuration
 #-------------------------------------------------------------------------------
-add_library( ${PROJECT_NAME} )
-add_library( ${PROJECT_NAME}-friend INTERFACE )
+add_library(${PROJECT_NAME}     OBJECT)
+add_library(${PROJECT_NAME}-sdk INTERFACE)
 
-target_sources( ${PROJECT_NAME}
+generate_export_header(${PROJECT_NAME}
+  EXPORT_FILE_NAME efika/io/export.h
+  BASE_NAME        io
+  PREFIX_NAME      EFIKA_)
+
+target_sources(${PROJECT_NAME}
   PRIVATE src/cluto.c src/dimacs.c src/metis.c src/mm.c src/snap.c
-          #[[src/ugraph.c]] )
+          #[[src/ugraph.c]])
 
-target_include_directories( ${PROJECT_NAME}
-  PUBLIC  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-          $<INSTALL_INTERFACE:include>
-  PRIVATE src/include )
+target_include_directories(${PROJECT_NAME}
+  PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include
+          ${CMAKE_CURRENT_BINARY_DIR})
 
-target_include_directories( ${PROJECT_NAME}-friend
-  INTERFACE src/include )
+target_include_directories(${PROJECT_NAME}-sdk
+  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 
-add_library( Efika::io        ALIAS ${PROJECT_NAME} )
-add_library( Efika::io-friend ALIAS ${PROJECT_NAME}-friend )
+add_library(Efika::io    ALIAS ${PROJECT_NAME})
+add_library(EfikaSDK::io ALIAS ${PROJECT_NAME}-sdk)
 
 #-------------------------------------------------------------------------------
 # Declare efika dependencies
 #-------------------------------------------------------------------------------
-include( FetchContent )
+include(FetchContent)
 
-foreach( dep core )
-  FetchContent_Declare( efika-${dep}
-    GIT_REPOSITORY git@github.com:jiverson002/efika-${dep}.git )
-  FetchContent_MakeAvailable( efika-${dep} )
+foreach(dep core)
+  FetchContent_Declare(efika-${dep}
+    GIT_REPOSITORY git@github.com:jiverson002/efika-${dep}.git)
 
-  target_link_libraries( ${PROJECT_NAME} PUBLIC  Efika::${dep} )
-  target_link_libraries( ${PROJECT_NAME} PRIVATE Efika::${dep}-friend )
+  FetchContent_MakeAvailable(efika-${dep})
+
+  target_link_libraries(${PROJECT_NAME} PRIVATE Efika::${dep} EfikaSDK::${dep})
 endforeach()
 
 #-------------------------------------------------------------------------------
 # Unit test configuration
 #-------------------------------------------------------------------------------
-if( CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME )
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   include( CTest )
-endif()
-if( CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING )
-  add_subdirectory( test )
+  if(BUILD_TESTING)
+    add_subdirectory(test)
+  endif()
 endif()

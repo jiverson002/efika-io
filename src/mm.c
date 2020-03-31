@@ -6,13 +6,14 @@
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
+#include "efika/io/export.h"
 #include "efika/io/rename.h"
 #include "efika/io.h"
 
 /*----------------------------------------------------------------------------*/
 /*! Function to read a matrix market file. */
 /*----------------------------------------------------------------------------*/
-extern int
+EFIKA_IO_EXPORT int
 IO_mm_load(FILE * const istream, Matrix * const M)
 {
   /*==========================================================================*/
@@ -149,7 +150,7 @@ IO_mm_load(FILE * const istream, Matrix * const M)
 /*----------------------------------------------------------------------------*/
 /*! Function to write a matrix market file. */
 /*----------------------------------------------------------------------------*/
-extern int
+EFIKA_IO_EXPORT int
 IO_mm_save(FILE * const ostream, Matrix const * const M)
 {
   /* validate input */

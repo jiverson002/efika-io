@@ -6,6 +6,7 @@
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
+#include "efika/io/export.h"
 #include "efika/io/rename.h"
 #include "efika/io.h"
 
@@ -28,7 +29,7 @@ getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 /*----------------------------------------------------------------------------*/
 /*! Function to read a metis file. */
 /*----------------------------------------------------------------------------*/
-extern int
+EFIKA_IO_EXPORT int
 IO_metis_load(FILE * const istream, Matrix * const M)
 {
   /*==========================================================================*/
@@ -151,7 +152,7 @@ IO_metis_load(FILE * const istream, Matrix * const M)
 /*----------------------------------------------------------------------------*/
 /*! Function to write a metis file. */
 /*----------------------------------------------------------------------------*/
-extern int
+EFIKA_IO_EXPORT int
 IO_metis_save(FILE * const ostream, Matrix const * const M)
 {
   /* validate input */
