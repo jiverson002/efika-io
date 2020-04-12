@@ -5,11 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "efika/io.h"
+
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
 #include "efika/io/export.h"
 #include "efika/io/rename.h"
-#include "efika/io.h"
 
 /*----------------------------------------------------------------------------*/
 /*! Get next non-comment line from a file. */
@@ -52,7 +53,7 @@ IO_cluto_load(FILE * const istream, Matrix * const M)
   GC_assert(0 < getline_nc(&line, &n, istream));
 
   /* read the file header */
-  GC_assert(3 == sscanf(line, IND_T" "IND_T" "IND_T"\n", &nr, &nc, &nnz));
+  GC_assert(3 == sscanf(line, PRIind" "PRIind" "PRIind"\n", &nr, &nc, &nnz));
 
   /* allocate memory for /M/ */
   ind_t * const ia = GC_malloc((nr + 1) * sizeof(*ia));
@@ -136,11 +137,11 @@ IO_cluto_save(FILE * const ostream, Matrix const * const M)
   ind_t const * const ja = M->ja;
   val_t const * const a  = M->a;
 
-  fprintf(ostream, IND_T" "IND_T" "IND_T"\n", nr, nc, nnz);
+  fprintf(ostream, PRIind" "PRIind" "PRIind"\n", nr, nc, nnz);
 
   for (ind_t i = 0; i < nr; i++) {
     for (ind_t j = ia[i]; j < ia[i + 1]; j++)
-      fprintf(ostream, IND_T" "VAL_T" ", ja[j]+1, a[j]);
+      fprintf(ostream, PRIind" "PRIval" ", ja[j]+1, a[j]);
     fprintf(ostream, "\n");
   }
 

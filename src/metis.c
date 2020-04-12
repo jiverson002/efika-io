@@ -52,7 +52,7 @@ IO_metis_load(FILE * const istream, Matrix * const M)
   /* get first non-comment line in file */
   GC_assert(0 < getline_nc(&line, &n, istream));
 
-  switch (sscanf(line, IND_T" "IND_T" %d "IND_T"\n", &nr, &nnz, &fmt, &ncon)) {
+  switch (sscanf(line, PRIind" "PRIind" %d "PRIind"\n", &nr, &nnz, &fmt, &ncon)) {
     case 4:
     /* validate */
     if (0 == ncon)
@@ -170,23 +170,23 @@ IO_metis_save(FILE * const ostream, Matrix const * const M)
   val_t const * const vwgt = M->vwgt;
   ind_t const * const vsiz = M->vsiz;
 
-  fprintf(ostream, IND_T" "IND_T, nr, nnz/2);
+  fprintf(ostream, PRIind" "PRIind, nr, nnz/2);
   if (fmt > 0)
-    fprintf(ostream, " %03d "IND_T, fmt, ncon);
+    fprintf(ostream, " %03d "PRIind, fmt, ncon);
   fprintf(ostream, "\n");
 
   for (ind_t i = 0; i < nr; i++) {
     if (has_vtxsiz(fmt))
-      fprintf(ostream, IND_T" ", vsiz[i]);
+      fprintf(ostream, PRIind" ", vsiz[i]);
 
     if (has_vtxwgt(fmt))
       for (ind_t j = 0; j < ncon; j++)
-        fprintf(ostream, VAL_T" ", vwgt[i * ncon + j]);
+        fprintf(ostream, PRIval" ", vwgt[i * ncon + j]);
 
     for (ind_t j = ia[i]; j < ia[i + 1]; j++) {
-      fprintf(ostream, IND_T" ", ja[j]+1);
+      fprintf(ostream, PRIind" ", ja[j]+1);
       if (has_adjwgt(fmt))
-        fprintf(ostream, VAL_T" ", a[j]);
+        fprintf(ostream, PRIval" ", a[j]);
     }
     fprintf(ostream, "\n");
   }

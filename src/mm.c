@@ -57,7 +57,7 @@ IO_mm_load(FILE * const istream, Matrix * const M)
   while (0 < getline(&line, &n, istream) && '%' == line[0]);
 
   /* read size line */
-  GC_assert(3 == sscanf(line, IND_T" "IND_T" "IND_T"\n", &nr, &nc, &nnz));
+  GC_assert(3 == sscanf(line, PRIind" "PRIind" "PRIind"\n", &nr, &nc, &nnz));
 
   if (1 == symm) {
     GC_assert(nr == nc);
@@ -71,9 +71,9 @@ IO_mm_load(FILE * const istream, Matrix * const M)
       continue;
 
     if (has_adjwgt(fmt))
-      GC_assert(3 == sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w));
+      GC_assert(3 == sscanf(line, PRIind" "PRIind" "PRIval"\n", &u, &v, &w));
     else
-      GC_assert(2 == sscanf(line, IND_T" "IND_T"\n", &u, &v));
+      GC_assert(2 == sscanf(line, PRIind" "PRIind"\n", &u, &v));
 
     GC_assert(0 != u && 0 != v);
     GC_assert(u <= nr && v <= nc);
@@ -113,9 +113,9 @@ IO_mm_load(FILE * const istream, Matrix * const M)
       continue;
 
     if (has_adjwgt(fmt))
-      GC_assert(3 == sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w));
+      GC_assert(3 == sscanf(line, PRIind" "PRIind" "PRIval"\n", &u, &v, &w));
     else
-      GC_assert(2 == sscanf(line, IND_T" "IND_T"\n", &u, &v));
+      GC_assert(2 == sscanf(line, PRIind" "PRIind"\n", &u, &v));
 
     if (has_adjwgt(fmt))
       a[tmp[u-1]] = w;
@@ -169,15 +169,15 @@ IO_mm_save(FILE * const ostream, Matrix const * const M)
   fprintf(ostream, "%%%%MatrixMarket matrix coordinate %s %s\n",
     1 == fmt ? "pattern" : " real", 1 == symm ? "symmetric" : "general");
 
-  fprintf(ostream, IND_T" "IND_T" "IND_T"\n", nr, nr, nnz/(ind_t)(1 + symm));
+  fprintf(ostream, PRIind" "PRIind" "PRIind"\n", nr, nr, nnz/(ind_t)(1 + symm));
 
   for (ind_t i = 0; i < nr; i++) {
     for (ind_t j = ia[i]; j < ia[i + 1]; j++) {
       if ((0 == symm) || (1 == symm && i > ja[j])) {
         if (has_adjwgt(fmt))
-          fprintf(ostream, IND_T" "IND_T" "VAL_T"\n", i + 1, ja[j] + 1, a[j]);
+          fprintf(ostream, PRIind" "PRIind" "PRIval"\n", i + 1, ja[j] + 1, a[j]);
         else
-          fprintf(ostream, IND_T" "IND_T"\n", i + 1, ja[j] + 1);
+          fprintf(ostream, PRIind" "PRIind"\n", i + 1, ja[j] + 1);
       }
     }
   }

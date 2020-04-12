@@ -43,7 +43,7 @@ IO_snap_load(FILE * const istream, Matrix * const M)
     ind_t u, v;
     val_t w;
 
-    GC_assert(2 <= sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w));
+    GC_assert(2 <= sscanf(line, PRIind" "PRIind" "PRIval"\n", &u, &v, &w));
     GC_assert(0 != u || 0 != v);
 
     if (u > nr)
@@ -82,7 +82,7 @@ IO_snap_load(FILE * const istream, Matrix * const M)
     ind_t u, v;
     val_t w;
 
-    switch (sscanf(line, IND_T" "IND_T" "VAL_T"\n", &u, &v, &w)) {
+    switch (sscanf(line, PRIind" "PRIind" "PRIval"\n", &u, &v, &w)) {
       case 3:
       if (NULL == a)
         a = GC_malloc(nnz * sizeof(*a));
@@ -136,9 +136,9 @@ IO_snap_save(FILE * const ostream, Matrix const * const M)
 
   for (ind_t i = 0; i < nr; i++) {
     for (ind_t j = ia[i]; j < ia[i + 1]; j++) {
-      fprintf(ostream, IND_T" "IND_T, i + 1, ja[j] + 1);
+      fprintf(ostream, PRIind" "PRIind, i + 1, ja[j] + 1);
       if (NULL != a)
-        fprintf(ostream, " "VAL_T, a[j]);
+        fprintf(ostream, " "PRIval, a[j]);
       fprintf(ostream, "\n");
     }
   }
