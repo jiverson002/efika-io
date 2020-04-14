@@ -30,11 +30,10 @@ getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 /*! Function to read a metis file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_metis_load(FILE * const istream, Matrix * const M)
+IO_metis_load(char const * const filename, Matrix * const M)
 {
-  /*==========================================================================*/
+  /* ...garbage collected function... */
   GC_func_init();
-  /*==========================================================================*/
 
   int fmt = 0;
   size_t n = 0;
@@ -43,11 +42,16 @@ IO_metis_load(FILE * const istream, Matrix * const M)
   char * tok, * line = NULL;
 
   /* validate input */
-  if (!pp_all(istream, M))
+  if (!pp_all(filename, M))
     return -1;
 
   /* register line with the garbage collector */
   GC_register(&line);
+
+  /* open input file */
+  FILE * istream = fopen(filename, "r");
+  GC_assert(istream);
+  GC_register_free(fclose, istream);
 
   /* get first non-comment line in file */
   GC_assert(0 < getline_nc(&line, &n, istream));
@@ -144,6 +148,7 @@ IO_metis_load(FILE * const istream, Matrix * const M)
   M->vsiz  = vsiz;
   M->vwgt  = vwgt;
 
+  GC_free(istream);
   GC_free(line);
 
   return 0;
@@ -153,10 +158,15 @@ IO_metis_load(FILE * const istream, Matrix * const M)
 /*! Function to write a metis file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_metis_save(FILE * const ostream, Matrix const * const M)
+IO_metis_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */
-  if (!pp_all(ostream, M))
+  if (!pp_all(filename, M))
+    return -1;
+
+  /* open output file */
+  FILE * ostream = fopen(filename, "w");
+  if (!ostream)
     return -1;
 
   /* unpack /M/ */
@@ -190,6 +200,9 @@ IO_metis_save(FILE * const ostream, Matrix const * const M)
     }
     fprintf(ostream, "\n");
   }
+
+  /* ... */
+  fclose(ostream);
 
   return 0;
 }

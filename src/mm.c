@@ -14,11 +14,10 @@
 /*! Function to read a matrix market file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_mm_load(FILE * const istream, Matrix * const M)
+IO_mm_load(char const * const filename, Matrix * const M)
 {
-  /*==========================================================================*/
+  /* ...garbage collected function... */
   GC_func_init();
-  /*==========================================================================*/
 
   int fmt = 0, symm = 0;
   size_t n = 0;
@@ -28,11 +27,16 @@ IO_mm_load(FILE * const istream, Matrix * const M)
   char * line = NULL, * tok = NULL;
 
   /* validate input */
-  if (!pp_all(istream, M))
+  if (!pp_all(filename, M))
     return -1;
 
   /* register line with the garbage collector */
   GC_register(&line);
+
+  /* open input file */
+  FILE * istream = fopen(filename, "r");
+  GC_assert(istream);
+  GC_register_free(fclose, istream);
 
   /* read header line */
   GC_assert(0 < getline(&line, &n, istream));
@@ -142,6 +146,7 @@ IO_mm_load(FILE * const istream, Matrix * const M)
   M->ja    = ja;
   M->a     = a;
 
+  GC_free(istream);
   GC_free(line);
 
   return 0;
@@ -151,10 +156,15 @@ IO_mm_load(FILE * const istream, Matrix * const M)
 /*! Function to write a matrix market file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_mm_save(FILE * const ostream, Matrix const * const M)
+IO_mm_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */
-  if (!pp_all(ostream, M))
+  if (!pp_all(filename, M))
+    return -1;
+
+  /* open output file */
+  FILE * ostream = fopen(filename, "w");
+  if (!ostream)
     return -1;
 
   /* unpack /M/ */
@@ -181,6 +191,9 @@ IO_mm_save(FILE * const ostream, Matrix const * const M)
       }
     }
   }
+
+  /* ... */
+  fclose(ostream);
 
   return 0;
 }

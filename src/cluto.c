@@ -32,22 +32,26 @@ getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 /*! Function to read a cluto file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_cluto_load(FILE * const istream, Matrix * const M)
+IO_cluto_load(char const * const filename, Matrix * const M)
 {
-  /*==========================================================================*/
+  /* ...garbage collected function... */
   GC_func_init();
-  /*==========================================================================*/
 
   size_t n = 0;
   ind_t nr, nc, nnz;
   char *line = NULL;
 
   /* validate input */
-  if (!pp_all(istream, M))
+  if (!pp_all(filename, M))
     return -1;
 
   /* register line with the garbage collector */
   GC_register(&line);
+
+  /* open input file */
+  FILE * istream = fopen(filename, "r");
+  GC_assert(istream);
+  GC_register_free(fclose, istream);
 
   /* get first non-comment line in file */
   GC_assert(0 < getline_nc(&line, &n, istream));
@@ -114,6 +118,7 @@ IO_cluto_load(FILE * const istream, Matrix * const M)
   M->ja     = ja;
   M->a      = a;
 
+  GC_free(istream);
   GC_free(line);
 
   return 0;
@@ -123,10 +128,15 @@ IO_cluto_load(FILE * const istream, Matrix * const M)
 /*! Function to write a cluto file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_cluto_save(FILE * const ostream, Matrix const * const M)
+IO_cluto_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */
-  if (!pp_all(ostream, M))
+  if (!pp_all(filename, M))
+    return -1;
+
+  /* open output file */
+  FILE * ostream = fopen(filename, "w");
+  if (!ostream)
     return -1;
 
   /* unpack /M/ */
@@ -144,6 +154,9 @@ IO_cluto_save(FILE * const ostream, Matrix const * const M)
       fprintf(ostream, PRIind" "PRIval" ", ja[j]+1, a[j]);
     fprintf(ostream, "\n");
   }
+
+  /* ... */
+  fclose(ostream);
 
   return 0;
 }

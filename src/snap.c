@@ -16,11 +16,10 @@
 /*! Function to read a snap file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_snap_load(FILE * const istream, Matrix * const M)
+IO_snap_load(char const * const filename, Matrix * const M)
 {
-  /*==========================================================================*/
+  /* ...garbage collected function... */
   GC_func_init();
-  /*==========================================================================*/
 
   size_t n = 0;
   ind_t tmpsz = INIT_TMPSIZE;
@@ -28,11 +27,16 @@ IO_snap_load(FILE * const istream, Matrix * const M)
   char *line = NULL;
 
   /* validate input */
-  if (!pp_all(istream, M))
+  if (!pp_all(filename, M))
     return -1;
 
   /* register line with the garbage collector */
   GC_register(&line);
+
+  /* open input file */
+  FILE * istream = fopen(filename, "r");
+  GC_assert(istream);
+  GC_register_free(fclose, istream);
 
   ind_t *tmp = GC_calloc((tmpsz + 1), sizeof(*tmp));
 
@@ -113,6 +117,7 @@ IO_snap_load(FILE * const istream, Matrix * const M)
   M->ja    = ja;
   M->a     = a;
 
+  GC_free(istream);
   GC_free(line);
 
   return 0;
@@ -122,10 +127,15 @@ IO_snap_load(FILE * const istream, Matrix * const M)
 /*! Function to write a snap file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_snap_save(FILE * const ostream, Matrix const * const M)
+IO_snap_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */
-  if (!pp_all(ostream, M))
+  if (!pp_all(filename, M))
+    return -1;
+
+  /* open output file */
+  FILE * ostream = fopen(filename, "w");
+  if (!ostream)
     return -1;
 
   /* unpack /M/ */
@@ -142,6 +152,9 @@ IO_snap_save(FILE * const ostream, Matrix const * const M)
       fprintf(ostream, "\n");
     }
   }
+
+  /* ... */
+  fclose(ostream);
 
   return 0;
 }

@@ -10,10 +10,15 @@
 /*! Function to write a dimacs file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
-IO_dimacs_save(FILE * const ostream, Matrix const * const M)
+IO_dimacs_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */
-  if (!pp_all(ostream, M))
+  if (!pp_all(filename, M))
+    return -1;
+
+  /* open output file */
+  FILE * ostream = fopen(filename, "w");
+  if (!ostream)
     return -1;
 
   /* unpack /M/ */
@@ -35,6 +40,9 @@ IO_dimacs_save(FILE * const ostream, Matrix const * const M)
         fprintf(ostream, "e "PRIind" "PRIind"\n", i+1, ja[j]+1);
     }
   }
+
+  /* ... */
+  fclose(ostream);
 
   return 0;
 }
