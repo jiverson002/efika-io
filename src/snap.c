@@ -13,6 +13,15 @@
 #define INIT_TMPSIZE 1024
 
 /*----------------------------------------------------------------------------*/
+/*! Shim to allow fclose to be registered. */
+/*----------------------------------------------------------------------------*/
+static inline void
+vfclose(FILE * file)
+{
+  (void)fclose(file);
+}
+
+/*----------------------------------------------------------------------------*/
 /*! Function to read a snap file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
@@ -36,7 +45,7 @@ IO_snap_load(char const * const filename, Matrix * const M)
   /* open input file */
   FILE * istream = fopen(filename, "r");
   GC_assert(istream);
-  GC_register_free(fclose, istream);
+  GC_register_free(vfclose, istream);
 
   ind_t *tmp = GC_calloc((tmpsz + 1), sizeof(*tmp));
 

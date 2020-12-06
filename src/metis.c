@@ -11,6 +11,15 @@
 #include "efika/io.h"
 
 /*----------------------------------------------------------------------------*/
+/*! Shim to allow fclose to be registered. */
+/*----------------------------------------------------------------------------*/
+static inline void
+vfclose(FILE * file)
+{
+  (void)fclose(file);
+}
+
+/*----------------------------------------------------------------------------*/
 /*! Get next non-comment line from a file. */
 /*----------------------------------------------------------------------------*/
 static inline ssize_t
@@ -51,7 +60,7 @@ IO_metis_load(char const * const filename, Matrix * const M)
   /* open input file */
   FILE * istream = fopen(filename, "r");
   GC_assert(istream);
-  GC_register_free(fclose, istream);
+  GC_register_free(vfclose, istream);
 
   /* get first non-comment line in file */
   GC_assert(0 < getline_nc(&line, &n, istream));

@@ -11,6 +11,15 @@
 #include "efika/io.h"
 
 /*----------------------------------------------------------------------------*/
+/*! Shim to allow fclose to be registered. */
+/*----------------------------------------------------------------------------*/
+static inline void
+vfclose(FILE * file)
+{
+  (void)fclose(file);
+}
+
+/*----------------------------------------------------------------------------*/
 /*! Function to read a matrix market file. */
 /*----------------------------------------------------------------------------*/
 EFIKA_IO_EXPORT int
@@ -36,7 +45,7 @@ IO_mm_load(char const * const filename, Matrix * const M)
   /* open input file */
   FILE * istream = fopen(filename, "r");
   GC_assert(istream);
-  GC_register_free(fclose, istream);
+  GC_register_free(vfclose, istream);
 
   /* read header line */
   GC_assert(0 < getline(&line, &n, istream));
