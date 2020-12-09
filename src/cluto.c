@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
-#define _POSIX_C_SOURCE 200809L
 #include <ctype.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,6 +10,7 @@
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
+#include "efika/io/getline.h"
 #include "efika/io/rename.h"
 
 /*----------------------------------------------------------------------------*/
@@ -24,14 +25,14 @@ vfclose(FILE * file)
 /*----------------------------------------------------------------------------*/
 /*! Get next non-comment line from a file. */
 /*----------------------------------------------------------------------------*/
-static inline ssize_t
+static inline intmax_t
 getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 {
-  ssize_t ret;
+  intptr_t ret;
 
   /* skip comment lines */
   do {
-    ret = getline(lineptr, n, istream);
+    ret = IO_getline(lineptr, n, istream);
   } while (0 < ret && '%' == *lineptr[0]);
 
   return ret;

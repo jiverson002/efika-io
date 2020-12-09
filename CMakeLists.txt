@@ -5,7 +5,12 @@ cmake_minimum_required(VERSION 3.14)
 project(efika-io)
 
 # Include required CMake modules
+include(CheckSymbolExists)
 include(FetchContent)
+
+#-------------------------------------------------------------------------------
+# FUNCTION availability
+#-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # COMPONENT configuration
@@ -14,7 +19,7 @@ add_library(${PROJECT_NAME}     OBJECT)
 add_library(${PROJECT_NAME}-sdk INTERFACE)
 
 target_sources(${PROJECT_NAME}
-  PRIVATE src/cluto.c src/dimacs.c src/metis.c src/mm.c src/snap.c
+  PRIVATE src/getline.c src/cluto.c src/dimacs.c src/metis.c src/mm.c src/snap.c
           #[[src/ugraph.c]])
 
 target_include_directories(${PROJECT_NAME}
@@ -26,6 +31,16 @@ target_include_directories(${PROJECT_NAME}-sdk
 
 add_library(Efika::io    ALIAS ${PROJECT_NAME})
 add_library(EfikaSDK::io ALIAS ${PROJECT_NAME}-sdk)
+
+#-------------------------------------------------------------------------------
+# FEATURE AVAILABILITY checks
+#-------------------------------------------------------------------------------
+set(CMAKE_REQUIRED_DEFINITIONS "-D_POSIX_C_SOURCE=200809L")
+
+check_symbol_exists(getline "stdio.h" HAVE_GETLINE)
+
+target_compile_definitions(${PROJECT_NAME}
+  PUBLIC $<$<BOOL:${HAVE_GETLINE}>:HAVE_GETLINE>)
 
 #-------------------------------------------------------------------------------
 # Declare efika dependencies

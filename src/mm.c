@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: MIT */
-#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +8,7 @@
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
+#include "efika/io/getline.h"
 #include "efika/io/rename.h"
 
 /*----------------------------------------------------------------------------*/
@@ -49,7 +49,7 @@ IO_mm_load(char const * const filename, Matrix * const M)
   GC_register_free(vfclose, istream);
 
   /* read header line */
-  GC_assert(0 < getline(&line, &n, istream));
+  GC_assert(0 < IO_getline(&line, &n, istream));
   GC_assert(NULL != (tok = strtok(line," \t")));
   GC_assert(0 == memcmp(tok, "%%MatrixMarket", 15));
   GC_assert(NULL != (tok = strtok(NULL," \t")));
@@ -68,7 +68,7 @@ IO_mm_load(char const * const filename, Matrix * const M)
     GC_assert(0 == memcmp(tok, "general", 8));
 
   /* skip comment lines */
-  while (0 < getline(&line, &n, istream) && '%' == line[0]);
+  while (0 < IO_getline(&line, &n, istream) && '%' == line[0]);
 
   /* read size line */
   GC_assert(3 == sscanf(line, PRIind" "PRIind" "PRIind"\n", &nr, &nc, &nnz));
@@ -80,7 +80,7 @@ IO_mm_load(char const * const filename, Matrix * const M)
 
   ind_t * const tmp = GC_calloc(nr + 1, sizeof(*tmp));
 
-  while (0 < getline(&line, &n, istream)) {
+  while (0 < IO_getline(&line, &n, istream)) {
     if ('%' == line[0])
       continue;
 
@@ -116,13 +116,13 @@ IO_mm_load(char const * const filename, Matrix * const M)
   rewind(istream);
 
   /* read header line */
-  GC_assert(0 < getline(&line, &n, istream));
+  GC_assert(0 < IO_getline(&line, &n, istream));
 
   /* skip comment lines */
-  while (0 < getline(&line, &n, istream) && '%' == line[0]);
+  while (0 < IO_getline(&line, &n, istream) && '%' == line[0]);
   /* skip size line */
 
-  while (0 < getline(&line, &n, istream)) {
+  while (0 < IO_getline(&line, &n, istream)) {
     if ('%' == line[0])
       continue;
 
@@ -141,7 +141,7 @@ IO_mm_load(char const * const filename, Matrix * const M)
     }
   }
 
-  while (!feof(istream) && 0 < getline(&line, &n, istream))
+  while (!feof(istream) && 0 < IO_getline(&line, &n, istream))
     GC_assert('%' == line[0]);
 
   M->fmt   = fmt;

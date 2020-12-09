@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#define _POSIX_C_SOURCE 200809L
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +9,7 @@
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
+#include "efika/io/getline.h"
 #include "efika/io/rename.h"
 
 /*----------------------------------------------------------------------------*/
@@ -23,14 +24,14 @@ vfclose(FILE * file)
 /*----------------------------------------------------------------------------*/
 /*! Get next non-comment line from a file. */
 /*----------------------------------------------------------------------------*/
-static inline ssize_t
+static inline intmax_t
 getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 {
-  ssize_t ret;
+  intmax_t ret;
 
   /* skip comment lines */
   do {
-    ret = getline(lineptr, n, istream);
+    ret = IO_getline(lineptr, n, istream);
   } while (0 < ret && '%' == *lineptr[0]);
 
   return ret;
@@ -141,7 +142,7 @@ IO_metis_load(char const * const filename, Matrix * const M)
   }
   GC_assert(nnnz == nnz);
 
-  while (!feof(istream) && 0 < getline(&line, &n, istream))
+  while (!feof(istream) && 0 < IO_getline(&line, &n, istream))
     GC_assert('%' == line[0]);
 
   M->fmt   = fmt;

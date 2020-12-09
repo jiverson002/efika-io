@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: MIT */
-#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +8,7 @@
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
+#include "efika/io/getline.h"
 #include "efika/io/rename.h"
 
 #define INIT_TMPSIZE 1024
@@ -50,7 +50,7 @@ IO_snap_load(char const * const filename, Matrix * const M)
 
   ind_t *tmp = GC_calloc((tmpsz + 1), sizeof(*tmp));
 
-  while (0 < getline(&line, &n, istream)) {
+  while (0 < IO_getline(&line, &n, istream)) {
     if ('#' == line[0])
       continue;
 
@@ -89,7 +89,7 @@ IO_snap_load(char const * const filename, Matrix * const M)
 
   rewind(istream);
 
-  while (0 < getline(&line, &n, istream)) {
+  while (0 < IO_getline(&line, &n, istream)) {
     if ('#' == line[0])
       continue;
 
@@ -112,7 +112,7 @@ IO_snap_load(char const * const filename, Matrix * const M)
     }
   }
 
-  while (!feof(istream) && 0 < getline(&line, &n, istream))
+  while (!feof(istream) && 0 < IO_getline(&line, &n, istream))
     GC_assert('#' == line[0]);
 
   /*M->fmt   = 0;*/
