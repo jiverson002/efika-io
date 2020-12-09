@@ -4,11 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "efika/core.h"
+#include "efika/io.h"
+
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
-#include "efika/io/export.h"
 #include "efika/io/rename.h"
-#include "efika/io.h"
 
 /*----------------------------------------------------------------------------*/
 /*! Shim to allow fclose to be registered. */
@@ -22,7 +23,7 @@ vfclose(FILE * file)
 /*----------------------------------------------------------------------------*/
 /*! Function to read a matrix market file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_mm_load(char const * const filename, Matrix * const M)
 {
   /* ...garbage collected function... */
@@ -164,7 +165,7 @@ IO_mm_load(char const * const filename, Matrix * const M)
 /*----------------------------------------------------------------------------*/
 /*! Function to write a matrix market file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_mm_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */

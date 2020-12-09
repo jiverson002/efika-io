@@ -1,15 +1,16 @@
 /* SPDX-License-Identifier: MIT */
 #include <stdio.h>
 
-#include "efika/core/pp.h"
-#include "efika/io/export.h"
-#include "efika/io/rename.h"
+#include "efika/core.h"
 #include "efika/io.h"
+
+#include "efika/core/pp.h"
+#include "efika/io/rename.h"
 
 /*----------------------------------------------------------------------------*/
 /*! Function to write a dimacs file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_dimacs_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */

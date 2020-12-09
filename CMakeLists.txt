@@ -4,13 +4,7 @@ cmake_minimum_required(VERSION 3.14)
 # Subproject of efika
 project(efika-io)
 
-# Include build configurations (compiler standards, options, etc.)
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND EFIKA_BUILDCONFIG_FILE)
-  include(${EFIKA_BUILDCONFIG_FILE})
-endif()
-
 # Include required CMake modules
-include(GenerateExportHeader)
 include(FetchContent)
 
 #-------------------------------------------------------------------------------
@@ -19,19 +13,13 @@ include(FetchContent)
 add_library(${PROJECT_NAME}     OBJECT)
 add_library(${PROJECT_NAME}-sdk INTERFACE)
 
-generate_export_header(${PROJECT_NAME}
-  EXPORT_FILE_NAME efika/io/export.h
-  BASE_NAME        io
-  PREFIX_NAME      EFIKA_)
-
 target_sources(${PROJECT_NAME}
   PRIVATE src/cluto.c src/dimacs.c src/metis.c src/mm.c src/snap.c
           #[[src/ugraph.c]])
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include
-          ${CMAKE_CURRENT_BINARY_DIR})
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 
 target_include_directories(${PROJECT_NAME}-sdk
   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
@@ -44,7 +32,7 @@ add_library(EfikaSDK::io ALIAS ${PROJECT_NAME}-sdk)
 #-------------------------------------------------------------------------------
 foreach(dep core)
   FetchContent_Declare(efika-${dep}
-    GIT_REPOSITORY git@github.com:jiverson002/efika-${dep}.git)
+    GIT_REPOSITORY https://github.com/jiverson002/efika-${dep}.git)
 
   FetchContent_MakeAvailable(efika-${dep})
 

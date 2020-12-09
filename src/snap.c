@@ -4,11 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "efika/core.h"
+#include "efika/io.h"
+
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
-#include "efika/io/export.h"
 #include "efika/io/rename.h"
-#include "efika/io.h"
 
 #define INIT_TMPSIZE 1024
 
@@ -24,7 +25,7 @@ vfclose(FILE * file)
 /*----------------------------------------------------------------------------*/
 /*! Function to read a snap file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_snap_load(char const * const filename, Matrix * const M)
 {
   /* ...garbage collected function... */
@@ -135,7 +136,7 @@ IO_snap_load(char const * const filename, Matrix * const M)
 /*----------------------------------------------------------------------------*/
 /*! Function to write a snap file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_snap_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */

@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "efika/core.h"
 #include "efika/io.h"
 
 #include "efika/core/gc.h"
 #include "efika/core/pp.h"
-#include "efika/io/export.h"
 #include "efika/io/rename.h"
 
 /*----------------------------------------------------------------------------*/
@@ -40,7 +40,7 @@ getline_nc(char ** const lineptr, size_t * const n, FILE * const istream)
 /*----------------------------------------------------------------------------*/
 /*! Function to read a cluto file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_cluto_load(char const * const filename, Matrix * const M)
 {
   /* ...garbage collected function... */
@@ -136,7 +136,7 @@ IO_cluto_load(char const * const filename, Matrix * const M)
 /*----------------------------------------------------------------------------*/
 /*! Function to write a cluto file. */
 /*----------------------------------------------------------------------------*/
-EFIKA_IO_EXPORT int
+EFIKA_EXPORT int
 IO_cluto_save(char const * const filename, Matrix const * const M)
 {
   /* validate input */
